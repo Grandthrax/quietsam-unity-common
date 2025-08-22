@@ -20,8 +20,8 @@ public class UINumberUpdater : MonoBehaviour
         }
     }
 
-    void UpdateText(int current)
+    void UpdateText(int valueChange)
     {
-        text.text = current.ToString();
+        text.text = statChangedEvent.Value.ToString();
     }
 }
