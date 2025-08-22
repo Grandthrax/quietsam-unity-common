@@ -85,8 +85,8 @@ GameObject:
   - component: {fileID: 2393372245682779631}
   - component: {fileID: 1652235199714940547}
   - component: {fileID: 1368158159919398693}
-  - component: {fileID: 522760049239014107}
-  - component: {fileID: 5388514738196820720}
+  - component: {fileID: 7469483547164808429}
+  - component: {fileID: 3473012602396727464}
   m_Layer: 5
   m_Name: Health
   m_TagString: Untagged
@@ -151,7 +151,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &522760049239014107
+--- !u!114 &7469483547164808429
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -160,23 +160,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 6559307104822634448}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad3a534d73d562e43b3f6779ba9ce8e5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  fillImage: {fileID: 0}
-  enableShakeOnDamage: 1
-  shakeEffect: {fileID: 5388514738196820720}
-  _statChangedEvent: {fileID: 11400000, guid: 8122aad7d29dfee4e9abbad22bd4c9a3, type: 2}
---- !u!114 &5388514738196820720
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6559307104822634448}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5a4508df619e8054780c17fc4438dab7, type: 3}
+  m_Script: {fileID: 11500000, guid: e0dc1118d191d2a4c83869d68e91995c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   shakeTransform: {fileID: 0}
@@ -186,6 +170,22 @@ MonoBehaviour:
   enableColorFlash: 1
   flashColor: {r: 1, g: 0, b: 0, a: 1}
   flashDuration: 0.2
+--- !u!114 &3473012602396727464
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6559307104822634448}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e0e51e2ad6880d4282a67a9b705492c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fillImage: {fileID: 0}
+  enableShakeOnDamage: 1
+  shakeEffect: {fileID: 7469483547164808429}
+  _statChangedEvent: {fileID: 0}
 --- !u!1 &6582457174039659198
 GameObject:
   m_ObjectHideFlags: 0
