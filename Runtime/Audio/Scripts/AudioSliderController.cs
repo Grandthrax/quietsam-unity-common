@@ -1,33 +1,36 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-
-
-[Serializable] public enum VolumeType
+namespace QuietSam.Common
 {
-    MasterVol,
-    MusicVol,
-    SFXVol,
-    UIVol
-}
 
-public class AudioSliderController : MonoBehaviour
-{
-    private AudioManager _aud => AudioManager.Instance;
-
-    public Slider Slider;
-    [SerializeField] private VolumeType volumeType;
-
-    void Start()
+    [Serializable]
+    public enum VolumeType
     {
-        Slider = Slider == null ? GetComponent<Slider>() : Slider;
-        Slider.value = PlayerPrefs.GetFloat(volumeType.ToString(), 1f);
-        Slider.onValueChanged.AddListener(SetVolume);
+        MasterVol,
+        MusicVol,
+        SFXVol,
+        UIVol
     }
 
-    
-    public void SetVolume(float volume)
+    public class AudioSliderController : MonoBehaviour
     {
-        _aud.SetVolume(volumeType.ToString(), volume);
+        private AudioManager _aud => AudioManager.Instance;
+
+        public Slider Slider;
+        [SerializeField] private VolumeType volumeType;
+
+        void Start()
+        {
+            Slider = Slider == null ? GetComponent<Slider>() : Slider;
+            Slider.value = PlayerPrefs.GetFloat(volumeType.ToString(), 1f);
+            Slider.onValueChanged.AddListener(SetVolume);
+        }
+
+
+        public void SetVolume(float volume)
+        {
+            _aud.SetVolume(volumeType.ToString(), volume);
+        }
     }
 }

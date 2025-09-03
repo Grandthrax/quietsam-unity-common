@@ -1,19 +1,22 @@
 using UnityEngine;
-public class AudioOnCollider : MonoBehaviour
+namespace QuietSam.Common
 {
-    [SerializeField] private SfxEvent sfx;
-
-
-    private void OnTriggerEnter(Collider other)
+    public class AudioOnCollider : MonoBehaviour
     {
-        
-        
+        [SerializeField] private SfxEvent sfx;
+
+
+        private void OnTriggerEnter(Collider other)
         {
-            if(sfx != null)
+
+
             {
-                AudioManager.Instance.Play(sfx);
+                if (sfx != null)
+                {
+                    AudioManager.Instance.Play(sfx);
+                }
             }
         }
-    }
 
+    }
 }

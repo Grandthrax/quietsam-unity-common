@@ -2,26 +2,29 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class UINumberUpdater : MonoBehaviour
+namespace QuietSam.Common
 {
-    public TMP_Text text;
-    public IntEventChannel statChangedEvent;
-
-    void Start()
+    public class UINumberUpdater : MonoBehaviour
     {
-        if (text == null)
+        public TMP_Text text;
+        public IntEventChannel statChangedEvent;
+
+        void Start()
         {
-            text = GetComponent<TMP_Text>();
+            if (text == null)
+            {
+                text = GetComponent<TMP_Text>();
+            }
+
+            if (statChangedEvent != null)
+            {
+                statChangedEvent.OnEventRaised += UpdateText;
+            }
         }
 
-        if (statChangedEvent != null)
+        void UpdateText(int valueChange)
         {
-            statChangedEvent.OnEventRaised += UpdateText;
+            text.text = statChangedEvent.Value.ToString();
         }
-    }
-
-    void UpdateText(int valueChange)
-    {
-        text.text = statChangedEvent.Value.ToString();
     }
 }

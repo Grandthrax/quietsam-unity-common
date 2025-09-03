@@ -1,39 +1,42 @@
 using UnityEngine;
 using System;
 
-[CreateAssetMenu(menuName = "Events/Void Event")]
-public class VoidEventChannel : ScriptableObject
+namespace QuietSam.Common
 {
-    public event Action OnEventRaised;
-
-    public void Raise()
+    [CreateAssetMenu(menuName = "Events/Void Event")]
+    public class VoidEventChannel : ScriptableObject
     {
-        OnEventRaised?.Invoke();
+        public event Action OnEventRaised;
+
+        public void Raise()
+        {
+            OnEventRaised?.Invoke();
+        }
     }
-}
 
-[CreateAssetMenu(menuName = "Events/Int Event")]
-public class IntEventChannel : ScriptableObject
-{
-    [SerializeField] private int startValue;
-    private int _value;
-    public event Action<int> OnEventRaised;
-    public int Value => _value;
-
-    public void Raise(int valueChange)
+    [CreateAssetMenu(menuName = "Events/Int Event")]
+    public class IntEventChannel : ScriptableObject
     {
-        _value += valueChange;
-        OnEventRaised?.Invoke(valueChange);
+        [SerializeField] private int startValue;
+        private int _value;
+        public event Action<int> OnEventRaised;
+        public int Value => _value;
+
+        public void Raise(int valueChange)
+        {
+            _value += valueChange;
+            OnEventRaised?.Invoke(valueChange);
+        }
     }
-}
 
-[CreateAssetMenu(menuName="Events/Int2 Event")]
-public class Int2EventChannel : ScriptableObject
-{
-    public event Action<int, int> OnEventRaised;
-
-    public void Raise(int value1, int value2)
+    [CreateAssetMenu(menuName="Events/Int2 Event")]
+    public class Int2EventChannel : ScriptableObject
     {
-        OnEventRaised?.Invoke(value1, value2);
+        public event Action<int, int> OnEventRaised;
+
+        public void Raise(int value1, int value2)
+        {
+            OnEventRaised?.Invoke(value1, value2);
+        }
     }
 }

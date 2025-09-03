@@ -1,25 +1,27 @@
 ﻿using UnityEngine;
-
-public class InputManager : MonoBehaviour
+namespace QuietSam.Common
 {
-    public static InputManager Instance { get; private set; }
-
-    public InputSystem_Actions_QS Actions;
-    public InputSystem_Actions_QS.PlayerActions Player => Actions.Player;
-    public InputSystem_Actions_QS.UIActions UI => Actions.UI;
-
-    private void Awake()
+    public class InputManager : MonoBehaviour
     {
-        if (Instance != null) { Destroy(this); return; }
-        Instance = this;
-    }
+        public static InputManager Instance { get; private set; }
 
-    private void OnEnable(){
-        Actions = new InputSystem_Actions_QS();
-        Actions.Enable();
-    }
+        public InputSystem_Actions_QS Actions;
+        public InputSystem_Actions_QS.PlayerActions Player => Actions.Player;
+        public InputSystem_Actions_QS.UIActions UI => Actions.UI;
 
-    private void OnDisable(){
-        Actions.Disable();
+        private void Awake()
+        {
+            if (Instance != null) { Destroy(this); return; }
+            Instance = this;
+        }
+
+        private void OnEnable() {
+            Actions = new InputSystem_Actions_QS();
+            Actions.Enable();
+        }
+
+        private void OnDisable() {
+            Actions.Disable();
+        }
     }
 }
