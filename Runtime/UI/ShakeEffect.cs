@@ -8,7 +8,6 @@ public class ShakeEffect : MonoBehaviour
     [Header("Shake Settings")]
     [SerializeField] private float shakeDuration = 0.5f;
     [SerializeField] private float shakeStrength = 10f;
-    [SerializeField] private int shakeVibrato = 10;
     
     [Header("Color Flash")]
     [SerializeField] private bool enableColorFlash = true;
