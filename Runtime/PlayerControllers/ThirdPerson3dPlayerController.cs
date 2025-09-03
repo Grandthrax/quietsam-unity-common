@@ -6,7 +6,7 @@ namespace QuietSam.Common
 
     public class ThirdPerson3dPlayerController : MonoBehaviour
     {
-        private InputManager playerControls;
+        private InputManager playerControls => InputManager.Instance;
 
         private float verticalVelocity = 0f;
 
@@ -71,7 +71,6 @@ namespace QuietSam.Common
         private void HandleInput()
         {
             Move(playerControls.Player.Move.ReadValue<Vector2>());
-            Debug.Log("Move: " + playerControls.Player.Move.ReadValue<Vector2>());
 
             if (playerControls.Player.Jump.WasPressedThisFrame())
                 Jump();
