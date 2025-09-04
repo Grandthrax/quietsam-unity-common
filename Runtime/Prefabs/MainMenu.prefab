@@ -549,7 +549,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 359602043896980624}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: MainMenuManager, Assembly-CSharp
         m_MethodName: LoadLeaderboardScene
         m_Mode: 1
@@ -2922,7 +2922,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4954381902198608665}
-  - component: {fileID: 359602043896980624}
+  - component: {fileID: 6867476862336317939}
   m_Layer: 0
   m_Name: MainMenuManager
   m_TagString: Untagged
@@ -2945,7 +2945,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 50286007716655254}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &359602043896980624
+--- !u!114 &6867476862336317939
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2956,18 +2956,30 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 672903f181e90204b9be0c8824959e6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MainMenuManager
-  mainMenu: {fileID: 8224361474958058657}
-  settingsMenu: {fileID: 8773297826306146083}
-  gameScene:
-    m_SceneAsset: {fileID: 0}
-    m_SceneName: 
-  creditsScene:
-    m_SceneAsset: {fileID: 0}
-    m_SceneName: 
-  leaderboardScene:
-    m_SceneAsset: {fileID: 0}
-    m_SceneName: 
+  m_EditorClassIdentifier: 
+  mainMenu: {fileID: 7900164789624681492}
+  buttonEvents:
+  - button: {fileID: 3211721865971277495}
+    actionToPerform: 2
+    scene:
+      m_SceneAsset: {fileID: 0}
+      m_SceneName: 
+    windows:
+    - {fileID: 7900164789624681492}
+  - button: {fileID: 5675946594896002927}
+    actionToPerform: 3
+    scene:
+      m_SceneAsset: {fileID: 0}
+      m_SceneName: 
+    windows:
+    - {fileID: 8773297826306146083}
+  - button: {fileID: 595921676872679547}
+    actionToPerform: 4
+    scene:
+      m_SceneAsset: {fileID: 0}
+      m_SceneName: 
+    windows: []
+  showOnAwake: 0
 --- !u!1 &3407896667101400876
 GameObject:
   m_ObjectHideFlags: 0
@@ -3617,7 +3629,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 359602043896980624}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: MainMenuManager, Assembly-CSharp
         m_MethodName: LoadGameScene
         m_Mode: 1
@@ -5721,7 +5733,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 359602043896980624}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: MainMenuManager, Assembly-CSharp
         m_MethodName: ShowSettingsMenu
         m_Mode: 1
@@ -8033,7 +8045,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 10
   m_TargetDisplay: 0
 --- !u!114 &1513876639578318509
 MonoBehaviour:
@@ -8165,7 +8177,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 359602043896980624}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: MainMenuManager, Assembly-CSharp
         m_MethodName: ShowMainMenu
         m_Mode: 1
@@ -8456,7 +8468,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 359602043896980624}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: MainMenuManager, Assembly-CSharp
         m_MethodName: LoadCreditsScene
         m_Mode: 1
@@ -8559,7 +8571,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 359602043896980624}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: MainMenuManager, Assembly-CSharp
         m_MethodName: QuitGame
         m_Mode: 1
