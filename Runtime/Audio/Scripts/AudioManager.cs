@@ -214,10 +214,12 @@ namespace QuietSam.Common
             _currentTrack = null;
         }
 
+        bool isPaused = false;
+
         public void PauseMusic(bool paused)
         {
-            if (paused) { _activeMusic.Pause(); _idleMusic.Pause(); }
-            else { _activeMusic.UnPause(); _idleMusic.UnPause(); }
+            if (paused) { _activeMusic.Pause(); _idleMusic.Pause(); isPaused = true; }
+            else { _activeMusic.UnPause(); _idleMusic.UnPause(); isPaused = false; }
         }
 
         public void SetMusicPitch(float pitch)
@@ -395,7 +397,8 @@ namespace QuietSam.Common
             AudioSource trackSource = null;
             while (_currentTrack != null && trackSource == null)
             {
-                if (_musicA != null && _musicA.clip == _currentTrack.track && _musicA.isPlaying) trackSource = _musicA;
+                if (isPaused) yield return null;
+                else if (_musicA != null && _musicA.clip == _currentTrack.track && _musicA.isPlaying) trackSource = _musicA;
                 else if (_musicB != null && _musicB.clip == _currentTrack.track && _musicB.isPlaying) trackSource = _musicB;
                 else yield return null;
             }
@@ -403,7 +406,7 @@ namespace QuietSam.Common
             if (_currentTrack == null || trackSource == null) yield break;
 
             // Wait for that source to finish playback (music sources do not loop)
-            while (trackSource.isPlaying && trackSource.clip == _currentTrack.track)
+            while (isPaused || (trackSource.isPlaying && trackSource.clip == _currentTrack.track))
             {
                 yield return null;
             }
