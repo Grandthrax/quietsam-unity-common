@@ -19,9 +19,7 @@ namespace QuietSam.Common
 
         private float startingScale;
 
-
-
-        private void Start()
+        private void Awake()
         {
             if (fillImage == null)
                 fillImage = GetComponent<Image>();
