@@ -29,6 +29,11 @@ A singleton AudioManager, ScriptableObject-based audio assets.
 
 
 ### Usage
+```csharp
+// Pause/unpause
+AudioManager.Instance.Pause(true);
+AudioManager.Instance.Pause(false);
+```
 
 #### Playing Sound Effects
 ```csharp
@@ -48,17 +53,11 @@ AudioManager.Instance.Stop(audioSource);
 #### Music Management
 ```csharp
 // Play music with crossfade
-AudioManager.Instance.PlayMusic(myMusicTrack);
-
-// Play with custom fade time
-AudioManager.Instance.PlayMusic(myMusicTrack, 2.0f);
+AudioManager.Instance.PlayMusicNow(myMusicTrack);
 
 // Stop music with fade out
 AudioManager.Instance.StopMusic(1.0f);
 
-// Pause/unpause music
-AudioManager.Instance.PauseMusic(true);
-AudioManager.Instance.PauseMusic(false);
 
 // Change music pitch
 AudioManager.Instance.SetMusicPitch(1.2f);

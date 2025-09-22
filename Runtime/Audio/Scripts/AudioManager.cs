@@ -9,59 +9,67 @@ namespace QuietSam.Common
     {
 
         [Header("Mixer")]
-        public AudioMixer Mixer; // make sure to expose volumes in the mixer
+        public AudioMixer Mixer;
 
         [Header("Music")]
-        [SerializeField] private AudioMixerGroup _musicGroup;
-        [SerializeField] private AudioMixerGroup _sfxGroup;
-        [SerializeField] private float _defaultCrossfadeSecs = 1.5f;
-        [SerializeField] private MusicTrack[] _startingMusicTracks;
+        [SerializeField] private AudioMixerGroup m_musicGroup;
+        [SerializeField] private AudioMixerGroup m_sfxGroup;
+        [SerializeField] private AudioMixerGroup m_uiGroup;
 
-        private AudioSource _musicA, _musicB;
-        private AudioSource _activeMusic, _idleMusic;
-        private Coroutine _xfadeCo;
+        [Tooltip("When one song stops and another starts, this is the crossfade time")]
+        [SerializeField] private float m_defaultCrossfadeSecs = 1.5f;
+
+        [Tooltip("These music track will be played when the game starts and will loop once the queue empties")]
+        [SerializeField] private MusicTrack[] m_startingMusicTracks;
+
+        private bool m_isPaused = false;
+        //for crossfade magement we use two audiosources we can fade together
+        private AudioSource m_musicA, m_musicB;
+        private AudioSource m_activeMusic, m_idleMusic;
+        private Coroutine m_xfadeCo;
 
         // Music queue system
-        private Queue<MusicTrack> _musicQueue = new Queue<MusicTrack>();
-        private MusicTrack _currentTrack;
-        private Coroutine _queueCheckCo;
+        private Queue<MusicTrack> m_musicQueue = new Queue<MusicTrack>();
+        private MusicTrack m_currentTrack;
+        private Coroutine m_queueCheckCo;
+        //we need to keep track of the last time we played a sound effect to avoid playing the same sound effect too soon
+        private Dictionary<SfxEvent, float> m_lastPlayTime = new();
 
 
-        //pooling
+        //pooling. we don't want to create a new audio source every time we play a sound effect so we reuse them.
         [SerializeField] int poolSize = 12;
-        Queue<AudioSource> _sfxPool = new Queue<AudioSource>();
+        private Queue<AudioSource> m_sfxPool = new Queue<AudioSource>();
+
+        //singleton
         public static AudioManager Instance;
-
-
-        private readonly Dictionary<SfxEvent, float> _lastPlayTime = new();
 
         void Awake()
         {
+            //one instance and persist through scenes
             if (Instance != null) { Destroy(this); return; }
             Instance = this;
             DontDestroyOnLoad(this);
 
             for (int i = 0; i < poolSize; i++)
             {
-                _sfxPool.Enqueue(CreateAudioSource());
+                m_sfxPool.Enqueue(CreateAudioSource());
             }
             BuildMusicPlayers();
         }
 
         private void Start()
         {
-            if (_startingMusicTracks.Length > 0)
+            if (m_startingMusicTracks.Length > 0)
             {
                 // Add all starting tracks to the queue
-                foreach (var track in _startingMusicTracks)
+                foreach (var track in m_startingMusicTracks)
                 {
-                    _musicQueue.Enqueue(track);
+                    m_musicQueue.Enqueue(track);
                 }
 
                 // Start playing the first track
                 PlayNextInQueue();
             }
-            LoadSavedVolumes();
         }
 
         private AudioSource CreateAudioSource()
@@ -77,17 +85,24 @@ namespace QuietSam.Common
             => PlayAt(sfxEvent, null, Vector3.zero);
 
 
-        // Simple playback
+        // Simple playback:
         //AudioManager.Instance.Play(mySfxEvent);
         // 3D positioned sound
         //AudioManager.Instance.PlayAt(mySfxEvent, null, transform.position);
-        // Sound that follows an object
+        // Sound that follows an object:
         //AudioManager.Instance.PlayAt(mySfxEvent, playerTransform, Vector3.zero);
 
+        /// <summary>
+        /// Play a sound effect at a specific position, following an object or not.
+        /// </summary>
+        /// <param name="sfxEvent">The SfxEvent to play.</param>
+        /// <param name="follow">The Transform to follow.</param>
+        /// <param name="position">The position to play the sound effect at.</param>
+        /// <returns>The AudioSource of the sound effect.</returns>
         public AudioSource PlayAt(SfxEvent sfxEvent, Transform follow, Vector3 position)
         {
             if (sfxEvent == null) return null;
-            if (!sfxEvent.allowMultiple && _lastPlayTime.TryGetValue(sfxEvent, out var last))
+            if (!sfxEvent.allowMultiple && m_lastPlayTime.TryGetValue(sfxEvent, out var last))
             {
                 float now = sfxEvent.respectTime ? Time.time : Time.unscaledTime;
                 if (now - last < sfxEvent.minRepeatDelay) return null;
@@ -97,17 +112,16 @@ namespace QuietSam.Common
             if (clip == null) return null;
 
             AudioSource src;
-            if (_sfxPool.Count > 0)
+            if (m_sfxPool.Count > 0)
             {
-                src = _sfxPool.Dequeue();
-                if (src == null) src = CreateAudioSource();
+                src = m_sfxPool.Dequeue();
+                if (src == null) src = CreateAudioSource(); //sometimes it has been destroyed
             }
             else
             {
                 src = CreateAudioSource();
             }
             src.playOnAwake = false;
-
             src.clip = clip;
 
             // randomize volume/pitch to sound a bit different each time
@@ -128,7 +142,7 @@ namespace QuietSam.Common
             }
             else
             {
-                src.outputAudioMixerGroup = _sfxGroup;
+                src.outputAudioMixerGroup = m_sfxGroup;
             }
 
             // transform handling
@@ -139,7 +153,8 @@ namespace QuietSam.Common
             }
             else
             {
-                src.transform.SetParent(transform);
+                // keeping as transform means it would last through scene changes
+                src.transform.SetParent(null);
                 src.transform.position = position;
             }
 
@@ -155,24 +170,30 @@ namespace QuietSam.Common
 
             }
 
-            _lastPlayTime[sfxEvent] = sfxEvent.respectTime ? Time.time : Time.unscaledTime;
+            m_lastPlayTime[sfxEvent] = sfxEvent.respectTime ? Time.time : Time.unscaledTime;
             return src;
         }
 
         IEnumerator ReturnWhenDone(AudioSource src)
         {
-            // Optionally wait for clip.length / pitch with a small safety margin
             while (src.isPlaying) yield return null;
-            _sfxPool.Enqueue(src);
+            ReturnToPool(src);
+        }
+
+        void ReturnToPool(AudioSource src)
+        {
+            src.transform.SetParent(transform);
+            m_sfxPool.Enqueue(src);
         }
 
         public void Stop(AudioSource src)
         {
             if (src == null) return;
             src.Stop();
-            if (src.gameObject != null)
+            // if not looping we should return when done anyway 
+            if (src.loop)
             {
-                Destroy(src.gameObject);
+                ReturnToPool(src);
             }
         }
 
@@ -184,61 +205,57 @@ namespace QuietSam.Common
             PlayerPrefs.SetFloat(exposedParam, linear01);
         }
 
-        public void PlayMusic(MusicTrack track, float fade = -1f)
+        public void PlayMusicNow(MusicTrack track)
         {
-            if (track == null) return;
-            if (fade < 0f) fade = _defaultCrossfadeSecs;
+            AddToQueueFront(track);
+           SkipToNext();
+        }
+
+        private void PlayMusic(MusicTrack track, float fade = -1f)
+        {
+             if (track == null) return;
+            if (fade < 0f) fade = m_defaultCrossfadeSecs;
 
             // prepare idle source with new track
-            _idleMusic.outputAudioMixerGroup = track.output ? track.output : _musicGroup;
-            _idleMusic.volume = track.volume; //scaled by mixer
+            m_idleMusic.outputAudioMixerGroup = track.output ? track.output : m_musicGroup;
+            m_idleMusic.volume = track.volume; //scaled by mixer
 
-            _idleMusic.clip = track.track;
-            _idleMusic.loop = false; // Don't loop since we want to queue to next track
-            _idleMusic.Play();
+            m_idleMusic.clip = track.track;
+            m_idleMusic.loop = false; // Don't loop since we want to queue to next track
+            m_idleMusic.Play();
             StartCrossfade(fade);
         }
 
-        public void StopMusic(float fade = 0.8f)
-        {
-            if (_xfadeCo != null) StopCoroutine(_xfadeCo);
-            _xfadeCo = StartCoroutine(FadeOutAndStop(_activeMusic, fade));
 
-            // Clear the queue and stop queue checking
-            ClearQueue();
-            if (_queueCheckCo != null)
+        public void Pause(bool paused)
+        {
+
+            foreach (var audiosource in FindObjectsByType<AudioSource>(FindObjectsSortMode.None))
             {
-                StopCoroutine(_queueCheckCo);
-                _queueCheckCo = null;
+                if (paused) audiosource.Pause();
+                else audiosource.UnPause();
             }
-            _currentTrack = null;
-        }
+            m_isPaused = paused;
 
-        bool isPaused = false;
-
-        public void PauseMusic(bool paused)
-        {
-            if (paused) { _activeMusic.Pause(); _idleMusic.Pause(); isPaused = true; }
-            else { _activeMusic.UnPause(); _idleMusic.UnPause(); isPaused = false; }
         }
 
         public void SetMusicPitch(float pitch)
         {
-            _activeMusic.pitch = pitch;
-            _idleMusic.pitch = pitch;
+            m_activeMusic.pitch = pitch;
+            m_idleMusic.pitch = pitch;
         }
 
         // ---- Crossfade helpers ----
         private void StartCrossfade(float seconds)
         {
-            if (_xfadeCo != null) StopCoroutine(_xfadeCo);
-            _xfadeCo = StartCoroutine(CrossfadeCo(seconds));
+            if (m_xfadeCo != null) StopCoroutine(m_xfadeCo);
+            m_xfadeCo = StartCoroutine(CrossfadeCo(seconds));
         }
 
         private IEnumerator CrossfadeCo(float sec)
         {
-            var from = _activeMusic;
-            var to = _idleMusic;
+            var from = m_activeMusic;
+            var to = m_idleMusic;
 
             float toStartVol = to.volume;
             to.volume = 0f;
@@ -259,33 +276,19 @@ namespace QuietSam.Common
             to.volume = toStartVol;
 
             //'to' is now active
-            _activeMusic = to;
-            _idleMusic = (from == _musicA) ? _musicB : _musicA;
-            _xfadeCo = null;
-        }
-
-        private IEnumerator FadeOutAndStop(AudioSource src, float sec)
-        {
-            if (!src.isPlaying) yield break;
-            float start = src.volume, t = 0f;
-            while (t < sec)
-            {
-                t += Time.unscaledDeltaTime;
-                src.volume = Mathf.Lerp(start, 0f, t / sec);
-                yield return null;
-            }
-            src.Stop();
-            src.volume = start;
+            m_activeMusic = to;
+            m_idleMusic = from;
+            m_xfadeCo = null;
         }
 
         // Music queue management methods
         public void AddToQueue(MusicTrack track)
         {
             if (track == null) return;
-            _musicQueue.Enqueue(track);
+            m_musicQueue.Enqueue(track);
 
             // If no music is currently playing, start playing
-            if (_currentTrack == null && !_activeMusic.isPlaying)
+            if (m_currentTrack == null && !m_activeMusic.isPlaying)
             {
                 PlayNextInQueue();
             }
@@ -300,15 +303,15 @@ namespace QuietSam.Common
             tempQueue.Enqueue(track);
 
             // Add all existing tracks after
-            while (_musicQueue.Count > 0)
+            while (m_musicQueue.Count > 0)
             {
-                tempQueue.Enqueue(_musicQueue.Dequeue());
+                tempQueue.Enqueue(m_musicQueue.Dequeue());
             }
 
-            _musicQueue = tempQueue;
+            m_musicQueue = tempQueue;
 
             // If no music is currently playing, start playing
-            if (_currentTrack == null && !_activeMusic.isPlaying)
+            if (m_currentTrack == null && !m_activeMusic.isPlaying)
             {
                 PlayNextInQueue();
             }
@@ -316,12 +319,12 @@ namespace QuietSam.Common
 
         public void ClearQueue()
         {
-            _musicQueue.Clear();
+            m_musicQueue.Clear();
         }
 
         public void SkipToNext()
         {
-            if (_musicQueue.Count > 0)
+            if (m_musicQueue.Count > 0)
             {
                 PlayNextInQueue();
             }
@@ -334,29 +337,29 @@ namespace QuietSam.Common
 
         public int GetQueueCount()
         {
-            return _musicQueue.Count;
+            return m_musicQueue.Count;
         }
 
         public MusicTrack GetCurrentTrack()
         {
-            return _currentTrack;
+            return m_currentTrack;
         }
 
         public bool IsQueueEmpty()
         {
-            return _musicQueue.Count == 0;
+            return m_musicQueue.Count == 0;
         }
 
         private void PlayNextInQueue()
         {
-            if (_musicQueue.Count == 0)
+            if (m_musicQueue.Count == 0)
             {
-                _currentTrack = null;
+                m_currentTrack = null;
                 return;
             }
 
-            _currentTrack = _musicQueue.Dequeue();
-            PlayMusic(_currentTrack);
+            m_currentTrack = m_musicQueue.Dequeue();
+            PlayMusic(m_currentTrack);
 
             // Start checking if the current track has finished
             StartQueueCheck();
@@ -364,23 +367,23 @@ namespace QuietSam.Common
 
         private void StartQueueCheck()
         {
-            if (_queueCheckCo != null)
+            if (m_queueCheckCo != null)
             {
-                StopCoroutine(_queueCheckCo);
+                StopCoroutine(m_queueCheckCo);
             }
-            _queueCheckCo = StartCoroutine(CheckMusicEnd());
+            m_queueCheckCo = StartCoroutine(CheckMusicEnd());
         }
 
         private void RestartStartingMusic()
         {
             // Add all starting tracks back to the queue
-            foreach (var track in _startingMusicTracks)
+            foreach (var track in m_startingMusicTracks)
             {
-                _musicQueue.Enqueue(track);
+                m_musicQueue.Enqueue(track);
             }
 
             // Start playing the first track
-            if (_musicQueue.Count > 0)
+            if (m_musicQueue.Count > 0)
             {
                 PlayNextInQueue();
             }
@@ -388,31 +391,31 @@ namespace QuietSam.Common
 
         private IEnumerator CheckMusicEnd()
         {
-            if (_currentTrack == null || _activeMusic == null) yield break;
+            if (m_currentTrack == null || m_activeMusic == null) yield break;
 
             // Allow crossfade to swap active/idle first
             yield return null;
 
             // Wait until one of the music sources is actually playing the current track
             AudioSource trackSource = null;
-            while (_currentTrack != null && trackSource == null)
+            while (m_currentTrack != null && trackSource == null)
             {
-                if (isPaused) yield return null;
-                else if (_musicA != null && _musicA.clip == _currentTrack.track && _musicA.isPlaying) trackSource = _musicA;
-                else if (_musicB != null && _musicB.clip == _currentTrack.track && _musicB.isPlaying) trackSource = _musicB;
+                if (m_isPaused) yield return null;
+                else if (m_musicA != null && m_musicA.clip == m_currentTrack.track && m_musicA.isPlaying) trackSource = m_musicA;
+                else if (m_musicB != null && m_musicB.clip == m_currentTrack.track && m_musicB.isPlaying) trackSource = m_musicB;
                 else yield return null;
             }
 
-            if (_currentTrack == null || trackSource == null) yield break;
+            if (m_currentTrack == null || trackSource == null) yield break;
 
             // Wait for that source to finish playback (music sources do not loop)
-            while (isPaused || (trackSource.isPlaying && trackSource.clip == _currentTrack.track))
+            while (m_isPaused || (trackSource.isPlaying && trackSource.clip == m_currentTrack.track))
             {
                 yield return null;
             }
 
             // Advance to the next track or restart starting music
-            if (_musicQueue.Count > 0)
+            if (m_musicQueue.Count > 0)
             {
                 PlayNextInQueue();
             }
@@ -427,9 +430,9 @@ namespace QuietSam.Common
 
         private void BuildMusicPlayers()
         {
-            _musicA = CreateMusicSource("Music_A"); // empty music source
-            _musicB = CreateMusicSource("Music_B");
-            _activeMusic = _musicA; _idleMusic = _musicB;
+            m_musicA = CreateMusicSource("Music_A"); // empty music source
+            m_musicB = CreateMusicSource("Music_B");
+            m_activeMusic = m_musicA; m_idleMusic = m_musicB;
         }
 
         private AudioSource CreateMusicSource(string name)
@@ -438,19 +441,12 @@ namespace QuietSam.Common
             go.transform.SetParent(transform);
             var src = go.AddComponent<AudioSource>();
             src.playOnAwake = false;
-            src.loop = false; // Loop will be controlled by the queue system
+            src.loop = false; // We don't allow looping here because of the queue system
             src.spatialBlend = 0f;           // music is 2D
-            src.outputAudioMixerGroup = _musicGroup;
+            src.outputAudioMixerGroup = m_musicGroup;
             return src;
         }
 
-        private void LoadSavedVolumes()
-        {
-            foreach (var p in new[] { "MasterVol", "MusicVol", "SFXVol", "UIVol" })
-            {
-                var volume = PlayerPrefs.GetFloat(p, 0.5f);
-                SetVolume(p, volume);
-            }
-        }
+        
     }
 }
