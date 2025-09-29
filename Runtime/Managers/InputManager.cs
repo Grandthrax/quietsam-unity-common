@@ -21,7 +21,7 @@ namespace QuietSam.Common
         }
 
         private void OnDisable() {
-            Actions.Disable();
+            Actions?.Disable();
         }
     }
 }
